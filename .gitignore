@@ -1,3 +1,6 @@
 .env
 projects/*
 services/values/*
+
+!projects/_init
+!services/values/_init
