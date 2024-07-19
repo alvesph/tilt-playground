@@ -2,5 +2,5 @@
 projects/*
 services/values/*
 
-!projects/_init
-!services/values/_init
+!projects/._init
+!services/values/._init
