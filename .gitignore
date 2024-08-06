@@ -1,6 +1,8 @@
 .env
 projects/*
 services/values/*
+services/sonarqube/*
 
 !projects/._init
 !services/values/._init
+Tiltfile_copy

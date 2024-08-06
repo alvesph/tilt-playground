@@ -1,0 +1,18 @@
+[
+  {
+      "active": "false",
+      "name": "api-teste",
+      "name_application": "api-teste",
+      "path": "./projects/",
+      "path_value": "./services/values/",
+      "port": "3000"
+  },
+  {
+      "active": "false",
+      "name": "api-teste2",
+      "name_application": "api-teste2",
+      "path": "./projects/teste2/",
+      "path_value": "./services/values/",
+      "port": "3001"
+  }
+]

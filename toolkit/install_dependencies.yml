@@ -1,0 +1,24 @@
+---
+- hosts: local
+  become: yes
+  tasks:
+  - name: Install Tilt
+    shell: curl -fsSL https://raw.githubusercontent.com/tilt-dev/tilt/master/scripts/install.sh | bash
+    args:
+      executable: /bin/bash
+  - name: Install k3d via curl
+    shell: curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | bash
+    args:
+      executable: /bin/bash
+  - name: Download get_helm.sh script
+    get_url:
+      url: https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+      dest: /tmp/get_helm.sh
+  - name: Set execute permissions on get_helm.sh
+    file:
+      path: /tmp/get_helm.sh
+      mode: '0700'
+  - name: Run get_helm.sh script
+    shell: /tmp/get_helm.sh
+    args:
+      executable: /bin/bash

@@ -1,65 +1,73 @@
-# load("ext://docker_build_sub", "docker_build_sub")
-# image_tag_blob = local('python3 toolkit/generate_uuid.py')
-# image_tag = str(image_tag_blob).strip() 
 load('ext://uibutton', 'cmd_button', 'text_input', 'location')
 load("ext://dotenv", "dotenv")
 dotenv()
 
-cmd_button('hello',
-          argv=['sh', '-c', 'echo Hello, $NAME'],
-          location=location.NAV,
-          icon_name='front_hand',
-          text='Hello!',
-          inputs=[
-            text_input('NAME'),
-          ],
+cmd_button(
+    'clean_docker',
+    argv=['sh', '-c', 'chmod +x ./toolkit/clean_docker.sh && ./toolkit/clean_docker.sh'],
+    location=location.NAV,
+    icon_name='delete_sweep',
+    text='Limpar Docker'
 )
 
-# AUTHENTICATION AWS AND ECR
-# local('chmod +x ./toolkit/authentication.sh')
+cmd_button(
+    'excluded_cluster_k3d',
+    argv=['sh', '-c', 'chmod +x ./toolkit/excluded_cluster_k3d.sh && ./toolkit/excluded_cluster_k3d.sh'],
+    location=location.NAV,
+    icon_name='build',
+    text='Excluir Cluster'
+)
 
-# default_registry(
-#   os.getenv('REPO_BASE')
-# )
+#Toolkit
+local_resource(
+    'create-cluster',
+    cmd='chmod +x toolkit/create_cluster.sh && toolkit/create_cluster.sh',
+    labels=['toolkit']
+)
 
-
-# local_resource(
-#     name='create-regcred',
-#     cmd='kubectl create secret generic regcred --from-file=.dockerconfigjson=$HOME/.docker/config.json --type=kubernetes.io/dockerconfigjson',
-#     deps=['$HOME/.docker/config.json']
-# )
-
-# k8s_yaml('./toolkit/serviceaccount.yaml')
-
-# CLUSTER
 local_resource(
     'use-context-dev',
-    cmd='kubectl config use-context k3d-somename',
-    deps=['create-cluster'],
-    labels=['user-cluster']
+    cmd='kubectl config use-context k3d-playground',
+    labels=['toolkit'],
+    deps=['create-cluster']
 )
 
 # PROJECTS
 repo_base = os.getenv('REPO_BASE')
 namespace = os.getenv('NAMESPACE_DEV')
+npm_token = os.getenv('NPM_TOKEN')
 
-if os.getenv('DEPLOY_WORKER_EXECUTOR') == 'true':
-  docker_build(
-      repo_base + 'latest',
-      'projects/worker-executor-highcode/',
-      dockerfile='./projects/worker-executor-highcode/Dockerfile',
-      live_update=[
-          sync("./projects/worker-executor-highcode/", "/process")
-      ]
-  )
+def read_file(file_path):
+    return local('cat {}'.format(file_path))
 
-  yaml = helm(
-    './services/playground-resource',
-    name='worker-executor-highcode-pg',
-    namespace=namespace,
-    values=['./services/values/worker-executor-highcode.yaml'],
-    set=[],
+projects_content = read_file('./projects.json')
+
+projects = decode_json(projects_content)
+
+for project in projects:
+  if project["active"] == 'true':
+    docker_build(
+        repo_base + project["name"] + ':latest',
+        project["path"] + project["name"],
+        dockerfile= project["path"] + project["name"] + '/Dockerfile',
+        target='develop',
+        build_args={
+            'NPM_READ_TOKEN': npm_token
+        },
+        live_update=[
+            sync(project["path"] + project["name"], "/process"),
+            run('cd /process && npm install', trigger=[project["path"] + project["name"] + '/package.json'])
+        ]
     )
-  k8s_yaml(yaml)
-  k8s_resource('worker-executor-highcode-pg', labels=['Applications'])
-  # k8s_resource('worker-executor-highcode-pg', port_forwards=80)
+
+    yaml = helm(
+      './services/playground-resource',
+      name=project["name"] + '-pg',
+      namespace=namespace,
+      values=[project["path_value"] + project["name_application"] + '.yaml'],
+      set=[],
+      )
+    k8s_yaml(yaml)
+    k8s_resource(project["name_application"] + '-pg', labels=['Applications'])
+    k8s_resource(project["name_application"] + '-pg', port_forwards=project["port"] + ':80')
+
