@@ -6,7 +6,7 @@ Ambiente para testes da LinkApi
 * [Estrutura do Projeto](#Estrutura-do-projeto)
 * [Descrição da Estrutura](#Descricao-da-Estrutura)
 * [Comandos para Rodar](#Comandos-para-Rodar)
-* [Projetos Configurados](#Projetos-Configurados)
+* [Dockerfile do Projeto](#Dockerfile-do-Projeto)
 * [Permissão de usuário ao Docker](#Permissão-de-usuário-ao-Docker)
 
 # Requisitos
@@ -53,28 +53,31 @@ Antes de executar o tilt up, faça o seguinte:
 ├── toolkit
 │   ├── clean_docker.sh
 │   ├── cluster.yaml
+│   ├── create_cluster.yaml
+│   ├── excluded_cluster_k3d.yaml
 │   ├── hosts.ini
 │   ├── install_dependencies.yaml
 ├── .env
 ├── .gitignore
+├── projects.json
 ├── README.md
 ├── Tiltfile
 ```
 
 # Descrição da Estrutura
-- `projects` - Onde serão inseridos os projetos para o teste. [Deve ser mantido o nome original dos projetos].
-- `services` - Recursos do kubernetes.
-- `values`   - values.yaml dos projetos. [Deve ser mantido o nome original dos projetos].
-- `toolkit`  - Ferramentas necessárias para rodar o prjeto.
-- `.env`     - As envs de denfição dos testes. 
-- `Tiltfile` - Core do tilt.
+- `projects`      - Onde serão inseridos os projetos para o teste. [Deve ser mantido o nome original dos projetos].
+- `services`      - Recursos do kubernetes.
+- `values`        - values.yaml dos projetos. [Deve ser mantido o nome original dos projetos].
+- `toolkit`       - Ferramentas necessárias para rodar o prjeto.
+- `.env`          - As envs do projeto tilt. 
+- `projects.json` - Parâmetros para rodar o projeto. 
+- `Tiltfile`      - Core do tilt.
 
 ## Uso do .env
 - Modifique o nome .env.exemple para .env
 ~~~bash
 REPO_BASE= # onde vai ficar o registry do projeto (procure o time de DevOps)
 NAMESPACE_DEV=default # por padrão será usado o default, caso precise mudar, precisar falar com o time de DevOps
-DEPLOY_WORKER_EXECUTOR=true # Defina true caso vá testar o projeto worker-executor-highcode
 ~~~
 
 # Comandos para Rodar
@@ -89,8 +92,12 @@ tilt up
 tilt down
 ~~~
 
-# Projetos Configurados
-- `worker-executor-highcod`
+# Dockerfile do Projeto
+É necessário que o dockerfile tenha um stage `develop`
+ex:
+~~~dockerfile
+FROM <IMAGE> AS develop
+~~~
 
 # Permissão de usuário ao Docker
 Crie um grupo para adicionar o docker
