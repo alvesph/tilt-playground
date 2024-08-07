@@ -1,5 +1,5 @@
 # Playground
-Ambiente para testes da LinkApi
+Ambiente para testes
 
 # Índice
 * [Requisitos](#Requisitos)
