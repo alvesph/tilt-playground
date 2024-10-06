@@ -45,29 +45,43 @@ projects_content = read_file('./projects.json')
 projects = decode_json(projects_content)
 
 for project in projects:
-  if project["active"] == 'true':
-    docker_build(
-        repo_base + project["name"] + ':latest',
-        project["path"] + project["name"],
-        dockerfile= project["path"] + project["name"] + '/Dockerfile',
-        target='develop',
-        build_args={
-            'NPM_READ_TOKEN': npm_token
-        },
-        live_update=[
-            sync(project["path"] + project["name"], "/process"),
-            run('cd /process && npm install', trigger=[project["path"] + project["name"] + '/package.json'])
-        ]
-    )
+    if project["active"] == 'true':
+        if project["type"] == "node":
+            # Build para projetos Node.js
+            docker_build(
+                repo_base + project["name"] + ':latest',
+                project["path"] + project["name"],
+                dockerfile= project["path"] + project["name"] + '/Dockerfile',
+                target='develop',
+                build_args={
+                    'NPM_READ_TOKEN': npm_token
+                },
+                live_update=[
+                    sync(project["path"] + project["name"], "/process"),
+                    run('cd /process && npm install', trigger=[project["path"] + project["name"] + '/package.json'])
+                ]
+            )
+        elif project["type"] == "go":
+            # Build para projetos Go
+            docker_build(
+                repo_base + project["name"] + ':latest',
+                project["path"] + project["name"],
+                dockerfile=project["path"] + project["name"] + '/Dockerfile',
+                live_update=[
+                    sync(project["path"] + project["name"], "/app"),
+                    run('cd /app && go build -o /app/' + project["name"], trigger=[project["path"] + project["name"] + '/main.go'])
+                ]
+            )
 
-    yaml = helm(
-      './services/playground-resource',
-      name=project["name"] + '-pg',
-      namespace=namespace,
-      values=[project["path_value"] + project["name_application"] + '.yaml'],
-      set=[],
-      )
-    k8s_yaml(yaml)
-    k8s_resource(project["name_application"] + '-pg', labels=['Applications'])
-    k8s_resource(project["name_application"] + '-pg', port_forwards=project["port"] + ':80')
+        # Helm e Kubernetes config para ambos os tipos de projeto
+        yaml = helm(
+            './services/playground-resource',
+            name=project["name"] + '-pg',
+            namespace=namespace,
+            values=[project["path_value"] + project["name_application"] + '.yaml'],
+            set=[],
+        )
+        k8s_yaml(yaml)
+        k8s_resource(project["name_application"] + '-pg', labels=['Applications'])
+        k8s_resource(project["name_application"] + '-pg', port_forwards=project["port"] + ':80')
 

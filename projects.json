@@ -1,6 +1,7 @@
 [
   {
       "active": "false",
+      "type": "node",
       "name": "api-teste",
       "name_application": "api-teste",
       "path": "./projects/",
@@ -9,10 +10,20 @@
   },
   {
       "active": "false",
+      "type": "node",
       "name": "api-teste2",
       "name_application": "api-teste2",
       "path": "./projects/teste2/",
       "path_value": "./services/values/",
       "port": "3001"
+  },
+  {
+      "active": "true",
+      "type": "go",
+      "name": "logs-http",
+      "name_application": "logs-http",
+      "path": "/home/paulo/Documents/",
+      "path_value": "./services/values/",
+      "port": "8080"
   }
 ]
