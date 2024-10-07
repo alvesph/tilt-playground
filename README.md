@@ -31,6 +31,8 @@ sudo apt install ansible
 # Dependencias que serão instaladas
 # tilt, k3d, helm
 ansible-playbook -i ./toolkit/hosts.ini ./toolkit/install_dependencies.yml --ask-become-pass
+# Caso queira pular algum instalador, caso já tenha no sistema.
+ansible-playbook -i ./toolkit/hosts.ini ./toolkit/install_dependencies.yml --ask-become-pass --skip-tags "docker"
 ~~~
 
 ## Observações
