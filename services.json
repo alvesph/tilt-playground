@@ -1,0 +1,11 @@
+[
+  {
+      "active": "true",
+      "name": "datadog",
+      "alias": "datadog-agent",
+      "url": "https://helm.datadoghq.com",
+      "path_value": "./services/values/",
+      "value_name": "values-datadog",
+      "helm_repo": "datadog/datadog"
+  }
+]
