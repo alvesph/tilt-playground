@@ -9,20 +9,11 @@
       "port": "3000"
   },
   {
-      "active": "false",
-      "type": "node",
-      "name": "api-teste2",
-      "name_application": "api-teste2",
-      "path": "./projects/teste2/",
-      "path_value": "./services/values/",
-      "port": "3001"
-  },
-  {
       "active": "true",
       "type": "go",
-      "name": "logs-http",
-      "name_application": "logs-http",
-      "path": "/home/paulo/Documents/",
+      "name": "logs-datadog",
+      "name_application": "logs-datadog",
+      "path": "/home/ph/Documents/",
       "path_value": "./services/values/",
       "port": "8080"
   }
