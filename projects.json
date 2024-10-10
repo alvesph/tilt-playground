@@ -15,6 +15,6 @@
       "name_application": "logs-datadog",
       "path": "/home/ph/Documents/",
       "path_value": "./services/values/",
-      "port": "8080"
+      "port": "8081"
   }
 ]
