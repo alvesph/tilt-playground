@@ -1,24 +1,90 @@
 ---
 - hosts: local
   become: yes
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
   tasks:
+  - name: Install prerequisite packages for Docker
+    apt:
+      name:
+        - apt-transport-https
+        - ca-certificates
+        - curl
+        - software-properties-common
+      state: present
+    tags:
+      - infra
+      - docker
+
+  - name: Add Docker GPG key
+    shell: curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
+    tags:
+      - infra
+      - docker
+
+  - name: Add Docker APT repository
+    apt_repository:
+      repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu focal stable"
+      state: present
+    tags:
+      - infra
+      - docker
+
+  - name: Install Docker
+    apt:
+      name: docker-ce
+      state: latest
+    tags:
+      - infra
+      - docker
+
   - name: Install Tilt
     shell: curl -fsSL https://raw.githubusercontent.com/tilt-dev/tilt/master/scripts/install.sh | bash
     args:
       executable: /bin/bash
+    tags:
+      - infra
+      - tilt
+
   - name: Install k3d via curl
     shell: curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | bash
     args:
       executable: /bin/bash
+    tags:
+      - infra
+      - k3d
+
   - name: Download get_helm.sh script
     get_url:
       url: https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
       dest: /tmp/get_helm.sh
+    tags:
+      - infra
+      - helm
+
   - name: Set execute permissions on get_helm.sh
     file:
       path: /tmp/get_helm.sh
       mode: '0700'
+    tags:
+      - infra
+      - helm
+
   - name: Run get_helm.sh script
     shell: /tmp/get_helm.sh
     args:
       executable: /bin/bash
+    tags:
+      - infra
+      - helm
+
+  - name: Install kubectl
+    shell: |
+      curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl
+      chmod +x ./kubectl
+      mv ./kubectl /usr/local/bin/kubectl
+    args:
+      executable: /bin/bash
+    tags:
+      - infra
+      - kubectl
