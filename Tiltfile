@@ -81,25 +81,12 @@ for project in projects:
             name=project["name"] + '-pg',
             namespace=namespace,
             values=[project["path_value"] + project["name_application"] + '.yaml'],
-            set=[],
+            set=['image.repository=' + repo_base + project["name"]],
         )
         k8s_yaml(yaml)
         k8s_resource(project["name_application"] + '-pg', labels=['Applications'])
         k8s_resource(project["name_application"] + '-pg', port_forwards=project["port"] + ':80')
 
-# local_resource(
-#     'helm_repo_add_datadog',
-#     cmd='helm repo add datadog https://helm.datadoghq.com && helm repo update',
-#     labels=['datadog']
-# )
-
-# # Instalando o Datadog Agent
-# local_resource(
-#     'install_datadog_agent',
-#     cmd='helm install datadog-agent -f datadog-values.yaml datadog/datadog',
-#     labels=['datadog'],
-#     deps=['helm_repo_add_datadog']
-# )
 
 ## SERVICES
 for service in services:
@@ -112,7 +99,14 @@ for service in services:
 
         local_resource(
             service["name"],
-            cmd='helm upgrade --install' + ' ' + service["alias"] + ' ' + '-f' + ' ' + service["path_value"] + service["value_name"] + '.yaml' + ' ' + service["helm_repo"],
+            cmd='helm upgrade --install' + ' ' + service["alias"] + ' ' + '-f' + ' ' + service["path_value"] + service["value_name"] + '.yaml' + ' ' + service["helm_repo"] + ' ' + '--namespace ' + service["namespace"] + ' ' + '--create-namespace',
             labels=['helm'],
             deps=[service["name"] + '-repo']
+        )
+        
+        local_resource(
+            service["name"] + '-release',
+            cmd='helm uninstall' + ' ' + service["alias"] + ' ' +  '-n' + ' ' + service["namespace"],
+            labels=['helm-uninstall'],
+            auto_init=False
         )
