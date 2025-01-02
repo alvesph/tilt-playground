@@ -85,7 +85,7 @@ for project in projects:
         )
         k8s_yaml(yaml)
         k8s_resource(project["name_application"] + '-pg', labels=['Applications'])
-        k8s_resource(project["name_application"] + '-pg', port_forwards=project["port"] + ':80')
+        k8s_resource(project["name_application"] + '-pg', port_forwards=str(project["port"]) + ':' + str(project["port"]))
 
 
 ## SERVICES
@@ -94,13 +94,13 @@ for service in services:
         local_resource(
             service["name"] + '-repo',
             cmd='helm repo add' + ' ' + service["name"] + ' ' + service["url"],
-            labels=['helm']
+            labels=['helm-repo']
         )
 
         local_resource(
-            service["name"],
+            service["alias"],
             cmd='helm upgrade --install' + ' ' + service["alias"] + ' ' + '-f' + ' ' + service["path_value"] + service["value_name"] + '.yaml' + ' ' + service["helm_repo"] + ' ' + '--namespace ' + service["namespace"] + ' ' + '--create-namespace',
-            labels=['helm'],
+            labels=['helm-charts'],
             deps=[service["name"] + '-repo']
         )
         
