@@ -3,27 +3,18 @@
       "active": "false",
       "type": "node",
       "name": "api-teste",
-      "name_application": "api-teste",
-      "path": "./projects/",
-      "path_value": "./services/values/",
       "port": "3000"
   },
   {
       "active": "false",
       "type": "go",
       "name": "logs-datadog",
-      "name_application": "logs-datadog",
-      "path": "/home/ph/Documents/",
-      "path_value": "./services/values/",
       "port": "8081"
   },
   {
       "active": "false",
       "type": "go",
-      "name": "teste-api",
-      "name_application": "teste-api",
-      "path": "/home/ph/projects/",
-      "path_value": "./services/values/",
+      "name": "uptime-service-go",
       "port": "8080"
   }
 ]

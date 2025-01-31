@@ -4,7 +4,6 @@
     "name": "datadog",
     "alias": "datadog-agent",
     "url": "https://helm.datadoghq.com",
-    "path_value": "./services/values/",
     "value_name": "values-datadog",
     "helm_repo": "datadog/datadog",
     "namespace": "observability"
@@ -14,7 +13,6 @@
     "name": "prometheus-community",
     "alias": "prometheus",
     "url": "https://prometheus-community.github.io/helm-charts",
-    "path_value": "./services/values/",
     "value_name": "values-prometheus",
     "helm_repo": "prometheus-community/prometheus",
     "namespace": "observability"
@@ -24,7 +22,6 @@
     "name": "bitnami",
     "alias": "grafana",
     "url": "https://charts.bitnami.com/bitnami",
-    "path_value": "./services/values/",
     "value_name": "values-grafana",
     "helm_repo": "bitnami/grafana-operator",
     "namespace": "observability"

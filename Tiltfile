@@ -1,10 +1,8 @@
 load('ext://uibutton', 'cmd_button', 'text_input', 'location')
-load("ext://dotenv", "dotenv")
-dotenv()
 
 cmd_button(
     'clean_docker',
-    argv=['sh', '-c', 'chmod +x ./toolkit/clean_docker.sh && ./toolkit/clean_docker.sh'],
+    argv=['sh', '-c', 'chmod +x ./toolkit/manage_inseption.sh && ./toolkit/manage_inseption.sh clean_docker'],
     location=location.NAV,
     icon_name='delete_sweep',
     text='Limpar Docker'
@@ -12,16 +10,15 @@ cmd_button(
 
 cmd_button(
     'excluded_cluster_k3d',
-    argv=['sh', '-c', 'chmod +x ./toolkit/excluded_cluster_k3d.sh && ./toolkit/excluded_cluster_k3d.sh'],
+    argv=['sh', '-c', 'chmod +x ./toolkit/manage_inseption.sh && ./toolkit/manage_inseption.sh exclude_cluster'],
     location=location.NAV,
     icon_name='build',
     text='Excluir Cluster'
 )
 
-#Toolkit
 local_resource(
     'create-cluster',
-    cmd='chmod +x toolkit/create_cluster.sh && toolkit/create_cluster.sh',
+    cmd='chmod +x toolkit/manage_inseption.sh && toolkit/manage_inseption.sh create_cluster',
     labels=['toolkit']
 )
 
@@ -32,13 +29,12 @@ local_resource(
     deps=['create-cluster']
 )
 
-# PROJECTS
-repo_base = os.getenv('REPO_BASE')
-namespace = os.getenv('NAMESPACE_DEV')
-npm_token = os.getenv('NPM_TOKEN')
-path_app  = os.getenv('VOLUME_PATH_APP')
-path_app_helm_value = os.getenv('VOLUME_PATH_APP_HELM_VALUE')
-path_service_helm_value = os.getenv('VOLUME_PATH_SERVICE_HELM_VALUE')
+REPO_BASE = "k3d-registry.localhost:5006/"
+NAMESPACE = "default"
+NPM_TOKEN = ""
+PATH_APP  = "./applications/"
+PATH_APP_HELM_VALUES = "./applications/values_service/"
+PATH_SERVICE_HELM_VALUES = "./services/values_service/"
 
 def read_file(file_path):
     return local('cat {}'.format(file_path))
@@ -49,46 +45,47 @@ services_content = read_file('./services.json')
 projects = decode_json(projects_content)
 services = decode_json(services_content)
 
+# PROJECTS
 for project in projects:
     if project["active"] == 'true':
         if project["type"] == "node":
             # Build para projetos Node.js
             docker_build(
-                repo_base + project["name"] + ':latest',
-                project["path"] + project["name"],
-                dockerfile= project["path"] + project["name"] + '/Dockerfile',
+                REPO_BASE + project["name"] + ':latest',
+                PATH_APP + project["name"],
+                dockerfile= PATH_APP + project["name"] + '/Dockerfile',
                 target='develop',
                 build_args={
-                    'NPM_READ_TOKEN': npm_token
+                    'NPM_READ_TOKEN': project["npm_token"]
                 },
                 live_update=[
-                    sync(project["path"] + project["name"], "/process"),
-                    run('cd /process && npm install', trigger=[project["path"] + project["name"] + '/package.json'])
+                    sync(PATH_APP + project["name"], "/process"),
+                    run('cd /process && npm install', trigger=[PATH_APP + project["name"] + '/package.json'])
                 ]
             )
         elif project["type"] == "go":
             # Build para projetos Go
             docker_build(
-                repo_base + project["name"] + ':latest',
-                project["path"] + project["name"],
-                dockerfile=project["path"] + project["name"] + '/Dockerfile',
+                REPO_BASE + project["name"] + ':latest',
+                PATH_APP + project["name"],
+                dockerfile=PATH_APP + project["name"] + '/Dockerfile',
                 live_update=[
-                    sync(project["path"] + project["name"], "/app"),
-                    run('cd /app && go build -o /app/' + project["name"], trigger=[project["path"] + project["name"] + '/main.go'])
+                    sync(PATH_APP + project["name"], "/app"),
+                    run('cd /app && go build -o /app/' + project["name"], trigger=[PATH_APP + project["name"] + '/main.go'])
                 ]
             )
 
         # Helm e Kubernetes config para ambos os tipos de projeto
         yaml = helm(
-            './applications/playground-resource',
+            PATH_APP + 'playground-resource',
             name=project["name"] + '-pg',
-            namespace=namespace,
-            values=[project["path_value"] + project["name_application"] + '.yaml'],
-            set=['image.repository=' + repo_base + project["name"]],
+            namespace=NAMESPACE,
+            values=[PATH_APP + 'playground-resource/values.yaml'],
+            set=['image.repository=' + REPO_BASE + project["name"]],
         )
         k8s_yaml(yaml)
-        k8s_resource(project["name_application"] + '-pg', labels=['Applications'])
-        k8s_resource(project["name_application"] + '-pg', port_forwards=str(project["port"]) + ':' + str(project["port"]))
+        k8s_resource(project["name"] + '-pg', labels=['Applications'])
+        k8s_resource(project["name"] + '-pg', port_forwards=str(project["port"]) + ':' + str(project["port"]))
 
 
 ## SERVICES
@@ -102,7 +99,7 @@ for service in services:
 
         local_resource(
             service["alias"],
-            cmd='helm upgrade --install' + ' ' + service["alias"] + ' ' + '-f' + ' ' + service["path_value"] + service["value_name"] + '.yaml' + ' ' + service["helm_repo"] + ' ' + '--namespace ' + service["namespace"] + ' ' + '--create-namespace',
+            cmd='helm upgrade --install' + ' ' + service["alias"] + ' ' + '-f' + ' ' + PATH_SERVICE_HELM_VALUES + service["value_name"] + '.yaml' + ' ' + service["helm_repo"] + ' ' + '--namespace ' + service["namespace"] + ' ' + '--create-namespace',
             labels=['helm-charts'],
             deps=[service["name"] + '-repo']
         )
