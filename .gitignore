@@ -1,8 +1,5 @@
 .env
-projects/*
-services/values/*
-services/sonarqube/*
+applications/*
+services/values_service/*
 
-!projects/._init
-!services/values/._init
-Tiltfile_copy
+!applications/playground-resource/*
