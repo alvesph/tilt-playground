@@ -18,11 +18,11 @@
       "port": "8081"
   },
   {
-      "active": "true",
+      "active": "false",
       "type": "go",
       "name": "teste-api",
       "name_application": "teste-api",
-      "path": "/home/ph/Documents/",
+      "path": "/home/ph/projects/",
       "path_value": "./services/values/",
       "port": "8080"
   }

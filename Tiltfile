@@ -36,6 +36,9 @@ local_resource(
 repo_base = os.getenv('REPO_BASE')
 namespace = os.getenv('NAMESPACE_DEV')
 npm_token = os.getenv('NPM_TOKEN')
+path_app  = os.getenv('VOLUME_PATH_APP')
+path_app_helm_value = os.getenv('VOLUME_PATH_APP_HELM_VALUE')
+path_service_helm_value = os.getenv('VOLUME_PATH_SERVICE_HELM_VALUE')
 
 def read_file(file_path):
     return local('cat {}'.format(file_path))
@@ -77,7 +80,7 @@ for project in projects:
 
         # Helm e Kubernetes config para ambos os tipos de projeto
         yaml = helm(
-            './services/playground-resource',
+            './applications/playground-resource',
             name=project["name"] + '-pg',
             namespace=namespace,
             values=[project["path_value"] + project["name_application"] + '.yaml'],

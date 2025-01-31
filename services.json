@@ -10,7 +10,7 @@
     "namespace": "observability"
   },
   {
-    "active": "true",
+    "active": "false",
     "name": "prometheus-community",
     "alias": "prometheus",
     "url": "https://prometheus-community.github.io/helm-charts",
@@ -20,7 +20,7 @@
     "namespace": "observability"
   },
   {
-    "active": "true",
+    "active": "false",
     "name": "bitnami",
     "alias": "grafana",
     "url": "https://charts.bitnami.com/bitnami",
