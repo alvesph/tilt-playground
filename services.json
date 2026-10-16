@@ -25,5 +25,23 @@
     "value_name": "values-grafana",
     "helm_repo": "bitnami/grafana-operator",
     "namespace": "observability"
+  },
+  {
+    "active": "false",
+    "name": "bitnami",
+    "alias": "rabbitmq",
+    "url": "https://charts.bitnami.com/bitnami",
+    "value_name": "values-rabbitmq",
+    "helm_repo": "bitnami/rabbitmq",
+    "namespace": "queue"
+  },
+  {
+    "active": "true",
+    "name": "bitnami",
+    "alias": "minio",
+    "url": "https://charts.bitnami.com/bitnami",
+    "value_name": "values-minio",
+    "helm_repo": "bitnami/minio",
+    "namespace": "aws"
   }
 ]

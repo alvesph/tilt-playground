@@ -1,117 +1,197 @@
-# Playground
-Ambiente para testes
+# Playground Kubernetes
 
-# Índice
-* [Requisitos](#Requisitos)
-* [Estrutura do Projeto](#Estrutura-do-projeto)
-* [Descrição da Estrutura](#Descricao-da-Estrutura)
-* [Comandos para Rodar](#Comandos-para-Rodar)
-* [Dockerfile do Projeto](#Dockerfile-do-Projeto)
-* [Permissão de usuário ao Docker](#Permissão-de-usuário-ao-Docker)
+Ambiente local para desenvolver apps com Docker, k3d, Tilt e um chart Helm compartilhado.
+Cada app mantém seu `values_tilt.yaml`; o playground descobre os apps habilitados
+em um diretório base e provisiona seus serviços.
 
-# Requisitos
-- [Ansibl](https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html#installing-extra-python-dependencies)
-- [Docker](https://www.docker.com/)
-- [kubectl](https://kubernetes.io/docs/tasks/tools/)
-- [Helm]()
-- [Tilt](https://docs.tilt.dev/install.html#linux)
+## Requisitos
 
-# Intalando requisitos pelo Ansible
+Docker acessível pelo usuário, k3d, kubectl, Helm 3, Tilt e Python 3.
+O playbook `toolkit/install_dependencies.yml` é legado: confira a distribuição e os
+repositórios antes de utilizá-lo. O fluxo abaixo não depende de Ansible.
 
-## Ansible
-~~~bash
-sudo apt update
-sudo apt install software-properties-common
-sudo add-apt-repository --yes --update ppa:ansible/ansible
-sudo apt install ansible
-~~~
+## Diretório dos projetos
 
-## Rodar o Ansible
-~~~bash
-# Dependencias que serão instaladas
-# tilt, k3d, helm
-ansible-playbook -i ./toolkit/hosts.ini ./toolkit/install_dependencies.yml --ask-become-pass
-# Caso queira pular algum instalador, caso já tenha no sistema.
-ansible-playbook -i ./toolkit/hosts.ini ./toolkit/install_dependencies.yml --ask-become-pass --skip-tags docker
-~~~
+Configure uma única vez o `projects.json`:
 
-## Observações
-Antes de executar o tilt up, faça o seguinte:
-- O docker precisa ter premissão para rodar em modo de usuário
-
-# Estrutura do Projeto
-```plaintext
-/
-├── projects
-│   ├── sdk
-│   ├── api
-│   ├── ...
-├── services
-│   ├── playground-resource
-│   ├── values
-│       ├── sdk.yaml
-│       ├── api.yaml
-│       ├── ...
-├── toolkit
-│   ├── clean_docker.sh
-│   ├── cluster.yaml
-│   ├── create_cluster.yaml
-│   ├── excluded_cluster_k3d.yaml
-│   ├── hosts.ini
-│   ├── install_dependencies.yaml
-├── .env
-├── .gitignore
-├── projects.json
-├── README.md
-├── Tiltfile
+```json
+{
+  "path": "/home/ph/projects"
+}
 ```
 
-# Descrição da Estrutura
-- `projects`      - Onde serão inseridos os projetos para o teste. [Deve ser mantido o nome original dos projetos].
-- `services`      - Recursos do kubernetes.
-- `values`        - values.yaml dos projetos. [Deve ser mantido o nome original dos projetos].
-- `toolkit`       - Ferramentas necessárias para rodar o prjeto.
-- `.env`          - As envs do projeto tilt. 
-- `projects.json` - Parâmetros para rodar o projeto. 
-- `Tiltfile`      - Core do tilt.
+O caminho deve existir e ser um diretório. Também aceita `~` ou um caminho relativo
+a este playground. A lista antiga de apps foi substituída por esse objeto.
+Não é mais necessário cadastrar cada projeto no JSON.
 
-## Uso do .env
-- Modifique o nome .env.exemple para .env
-~~~bash
-REPO_BASE= # onde vai ficar o registry do projeto (procure o time de DevOps)
-NAMESPACE_DEV=default # por padrão será usado o default, caso precise mudar, precisar falar com o time de DevOps
-~~~
+A descoberta examina apenas as subpastas diretas, sem percorrer `node_modules`,
+`.git` ou projetos aninhados:
 
-# Comandos para Rodar
-- Para subir o ambiente
-~~~bash
-tilt up
-# click no espaço
-~~~
-- Para derrubar o ambiente [DEVE SER FEITO SEMPRE QUE TERMINAR O TESTE]
-~~~bash
-# ctrl c
-tilt down
-~~~
-
-# Dockerfile do Projeto
-É necessário que o dockerfile tenha um stage `develop`
-ex:
-~~~dockerfile
-FROM <IMAGE> AS develop
-~~~
-
-# Permissão de usuário ao Docker
-Crie um grupo para adicionar o docker
-
+```text
+/home/ph/projects/
+├── meu-app/
+│   ├── Dockerfile
+│   └── values_tilt.yaml     # enabled: true → provisiona
+├── outro-app/
+│   └── values_tilt.yaml     # enabled: false → ignora
+└── projeto-sem-values/     # ignora
 ```
-sudo groupadd docker
-sudo usermod -aG docker $USER
 
-sudo chmod 660 /var/run/docker.sock
-sudo chown root:docker /var/run/docker.sock
+## Habilitar um app
+
+Copie `examples/values_tilt.yaml` para a raiz do projeto e adapte:
+
+```yaml
+enabled: true
+
+tilt:
+  build:
+    dockerfile: Dockerfile
+    target: develop
+    args: {}
+  local_port: 8080
+  depends_on: [minio]
+
+service:
+  targetPort: 8080
+
+configMap:
+  REST_PORT: "8080"
+
+readinessProbe:
+  httpGet: null
+  tcpSocket:
+    port: http
+livenessProbe: null
 ```
-Após isso, reinicie o sistema 
+
+`enabled` fica na raiz do YAML e deve ser booleano: `true` ou `false`, sem aspas.
+Quando ausente, o app é considerado desabilitado. Apps desabilitados não precisam
+ter Dockerfile e não podem ser ativados por seleção explícita ou como dependência.
+
+O nome padrão do app é o nome da pasta. Para personalizar, use `tilt.name: meu-app-api`.
+Todas as configurações do app ficam nesse arquivo; o `projects.json` guarda apenas
+o diretório base. A seção `tilt` e o campo `enabled` são lidos pelo playground;
+os demais campos alimentam o chart compartilhado em `applications/playground-resource`.
+O Helm combina os defaults do chart com os values do app. A imagem e o nome final
+dos recursos são definidos pelo Tilt.
+
+O Dockerfile deve conter o stage configurado (padrão: `develop`); use `target: ""`
+para construir o stage final. O processo deve escutar em `0.0.0.0` na porta indicada.
+A porta local pode ser diferente da porta do container, permitindo testar apps
+com a mesma porta interna. O nome do recurso no painel e do Service é `meu-app-pg`.
+
+## Rodar
+
+```bash
+# Valida o diretório base, cria/inicia o cluster e sobe os apps habilitados.
+bash toolkit/playground.sh up
+
+# Opcional: seleciona um subconjunto dos apps habilitados ou serviços.
+bash toolkit/playground.sh up meu-app
 ```
-sudo reboot
+
+O cluster é preparado antes do Tilt. O script espera os nós ficarem prontos e usa
+explicitamente `k3d-playground`. O Tiltfile rejeita outros contextos.
+Com o cluster já disponível: `tilt up --context k3d-playground`.
+A seleção explícita substitui a seleção padrão, incluindo dependências transitivas.
+Cada dependência compartilhada é registrada uma única vez.
+
+Alterar um `values_tilt.yaml` observado recarrega o Tiltfile, incluindo mudanças em
+`enabled`. Criar o arquivo numa pasta já descoberta também é observado. Se criar
+uma pasta de projeto nova com o Tilt aberto, reinicie a sessão para descobri-la.
+Isso evita observar recursivamente todo o diretório base de projetos.
+
+## Serviços e dependências
+
+`services.json` é o catálogo de infraestrutura. Exemplo de estrutura (preencha a
+versão com uma versão real do chart escolhido):
+
+```json
+{
+  "active": false,
+  "name": "bitnami",
+  "alias": "minio",
+  "url": "https://charts.bitnami.com/bitnami",
+  "helm_repo": "bitnami/minio",
+  "namespace": "aws",
+  "values": "./services/values_service/values-minio.yaml",
+  "version": "VERSAO_DO_CHART",
+  "depends_on": [],
+  "port_forwards": ["9000:9000"]
+}
 ```
+
+Também é aceito o campo antigo `value_name` em vez de `values`.
+`version` é opcional para compatibilidade; fixe uma versão válida para obter
+reprodutibilidade. Os charts e imagens Bitnami existentes precisam ser revisados
+antes do primeiro deploy, devido às mudanças de catálogo desde 2025.
+
+Se o app declara `depends_on: [minio]`, o Tilt inclui o MinIO mesmo com
+`active: false`. Serviços também podem declarar dependências. Nomes desconhecidos
+e ciclos são rejeitados. Repositórios Helm compartilhados são registrados uma vez.
+
+O provisionamento usa `helm_resource`: Tilt instala a release, acompanha os pods
+e aguarda sua disponibilidade antes de iniciar os recursos dependentes.
+Isso ordena a primeira inicialização; o app ainda deve tratar indisponibilidade
+e reconectar durante a execução. Credenciais, buckets e conexões não são criados
+ou injetados automaticamente: configure-os nos values de cada serviço e app.
+Confirme os nomes dos Services dos charts para montar os endpoints DNS.
+
+Os arquivos de values de serviços existentes continuam ignorados pelo Git;
+configure-os localmente e versione apenas configurações sem credenciais.
+O `.env` antigo não é lido pelo Tiltfile. Não coloque tokens reais no catálogo.
+O campo `active` dos serviços permite subir infraestrutura independente dos apps;
+aceita booleanos e as strings antigas `"true"`/`"false"`. Para subir serviços apenas
+quando forem dependências, deixe `active: false` em suas entradas.
+O MinIO permanece ativo no catálogo existente; desative-o se quiser esse comportamento.
+
+## Encerrar
+
+Após Ctrl+C no Tilt, use a mesma seleção utilizada na subida:
+
+```bash
+# Remove os apps selecionados e suas dependências, incluindo releases Helm.
+bash toolkit/playground.sh down meu-app
+
+# Para o cluster, preservando os recursos e dados existentes.
+bash toolkit/playground.sh stop
+
+# Apaga o cluster e seus dados locais (ação destrutiva).
+k3d cluster delete playground
+```
+
+Dependências compartilhadas entram na remoção. Se outros apps ainda estiverem
+usando o mesmo serviço, não execute `down` apenas para pausar um app: pare a sessão
+ou ajuste a seleção com cuidado. PVCs podem permanecer após a remoção de releases,
+conforme o chart. Recursos criados pelos antigos comandos Helm continuam sujeitos
+à configuração e às credenciais da release original.
+
+## Escopo e desenvolvimento
+
+O chart compartilhado cobre apps executados como Deployment com uma porta,
+Service, configurações, secrets, probes, recursos, ingress e volumes. Workers podem
+usar `command`/`args`, mas Jobs, CronJobs e bancos com necessidades próprias exigem
+outros templates/charts. Serviços de infraestrutura usam seus charts específicos.
+
+Por padrão, alterações no código geram rebuild e redeploy. Isso funciona para
+qualquer linguagem e substitui o antigo Live Update que presumia `/app`, `/process`
+e reinício externo. Live Update pode ser acrescentado depois conforme cada runtime.
+ConfigMaps e Secrets são agrupados com o app e disparam rollout quando mudam.
+Probes agora são renderizadas: configure rotas reais ou desative com `null`.
+
+O cluster está configurado com um servidor e `agents: 0`, para reduzir o consumo
+local. O servidor também executa os apps. Alterar esse arquivo não redimensiona
+um cluster já criado; a nova configuração vale na próxima criação do cluster.
+
+## Verificações locais
+
+```bash
+helm lint applications/playground-resource
+bash -n toolkit/playground.sh
+python3 -m unittest discover -s tests -v
+```
+
+Os testes avaliam o Tiltfile real com kubeconfig temporário, sem subir Kubernetes,
+construir imagens ou instalar releases. O primeiro uso da extensão `helm_resource`
+pode exigir acesso à internet. Deploy e conectividade precisam ser validados no cluster.

@@ -1,0 +1,35 @@
+# Copie este arquivo para a raiz do app (ao lado do Dockerfile).
+# enabled controla a descoberta; tilt define as opções de execução.
+# Os demais campos são values do chart compartilhado.
+enabled: true
+
+tilt:
+  build:
+    dockerfile: Dockerfile
+    target: develop
+    args: {}
+  local_port: 8080
+  depends_on:
+    - minio
+
+service:
+  targetPort: 8080
+
+configMap:
+  REST_PORT: "8080"
+  # Confirme o nome do Service renderizado pelo chart da dependência.
+  S3_ENDPOINT: "http://minio.aws.svc.cluster.local:9000"
+
+# Defina rotas reais do seu app antes de habilitar probes HTTP.
+readinessProbe:
+  httpGet: null
+  tcpSocket:
+    port: http
+livenessProbe: null
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    memory: 256Mi

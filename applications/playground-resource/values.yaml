@@ -34,7 +34,7 @@ securityContext: {}
 service:
   type: ClusterIP
   port: 80
-  targetPort: 80
+  targetPort: 8080
 
 ingress:
   enabled: false
@@ -101,6 +101,7 @@ affinity: {}
 
 configMap:
   VALIDATION_CONFIGMAP: OK
+  REST_PORT: "8080"
 
 secrets:
   VALIDATION_SECRET: OK

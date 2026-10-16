@@ -3,7 +3,7 @@ kind: Simple
 metadata:
   name: DEV
 servers: 1
-agents: 2
+agents: 0
 kubeAPI:
   hostIP: "127.0.0.1"
   hostPort: "6445"
