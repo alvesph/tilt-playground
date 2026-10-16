@@ -72,6 +72,9 @@ for unused in range(len(catalog) + 1):
         if entry['kind'] == 'app':
             dependencies = entry['options'].get('depends_on', [])
         else:
+            version = spec.get('version', '')
+            if type(version) != 'string' or len(version.split('.')) != 3 or not all([part.isdigit() for part in version.split('.')]):
+                fail('Defina version com a versão exata do chart (ex.: 1.2.3) para o serviço: ' + name)
             dependencies = spec.get('depends_on', [])
         if type(dependencies) != 'list':
             fail('depends_on deve ser uma lista: ' + name)
@@ -103,9 +106,7 @@ for name in ordered:
         values_path = spec.get('values', './services/values_service/' + spec.get('value_name', 'values-' + name) + '.yaml')
         if not os.path.exists(values_path):
             fail('Values do serviço ' + name + ' não encontrado: ' + values_path)
-        flags = ['--create-namespace', '--values', values_path]
-        if spec.get('version'):
-            flags.extend(['--version', spec['version']])
+        flags = ['--create-namespace', '--values', values_path, '--version', spec['version']]
         helm_resource(
             name, spec['helm_repo'], namespace=spec['namespace'],
             flags=flags, deps=[values_path],

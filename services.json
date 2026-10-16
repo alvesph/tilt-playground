@@ -6,7 +6,8 @@
     "url": "https://helm.datadoghq.com",
     "value_name": "values-datadog",
     "helm_repo": "datadog/datadog",
-    "namespace": "observability"
+    "namespace": "observability",
+    "version": "3.215.1"
   },
   {
     "active": "false",
@@ -15,7 +16,8 @@
     "url": "https://prometheus-community.github.io/helm-charts",
     "value_name": "values-prometheus",
     "helm_repo": "prometheus-community/prometheus",
-    "namespace": "observability"
+    "namespace": "observability",
+    "version": "29.12.0"
   },
   {
     "active": "false",
@@ -24,7 +26,8 @@
     "url": "https://charts.bitnami.com/bitnami",
     "value_name": "values-grafana",
     "helm_repo": "bitnami/grafana-operator",
-    "namespace": "observability"
+    "namespace": "observability",
+    "version": "4.9.37"
   },
   {
     "active": "false",
@@ -33,7 +36,8 @@
     "url": "https://charts.bitnami.com/bitnami",
     "value_name": "values-rabbitmq",
     "helm_repo": "bitnami/rabbitmq",
-    "namespace": "queue"
+    "namespace": "queue",
+    "version": "16.0.14"
   },
   {
     "active": "true",
@@ -42,6 +46,7 @@
     "url": "https://charts.bitnami.com/bitnami",
     "value_name": "values-minio",
     "helm_repo": "bitnami/minio",
-    "namespace": "aws"
+    "namespace": "aws",
+    "version": "17.0.21"
   }
 ]

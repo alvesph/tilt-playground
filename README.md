@@ -104,8 +104,8 @@ Isso evita observar recursivamente todo o diretório base de projetos.
 
 ## Serviços e dependências
 
-`services.json` é o catálogo de infraestrutura. Exemplo de estrutura (preencha a
-versão com uma versão real do chart escolhido):
+`services.json` é o catálogo de infraestrutura. Cada entrada fixa a versão do
+chart, de forma semelhante a uma dependência em `Chart.yaml`:
 
 ```json
 {
@@ -116,16 +116,24 @@ versão com uma versão real do chart escolhido):
   "helm_repo": "bitnami/minio",
   "namespace": "aws",
   "values": "./services/values_service/values-minio.yaml",
-  "version": "VERSAO_DO_CHART",
+  "version": "17.0.21",
   "depends_on": [],
   "port_forwards": ["9000:9000"]
 }
 ```
 
 Também é aceito o campo antigo `value_name` em vez de `values`.
-`version` é opcional para compatibilidade; fixe uma versão válida para obter
-reprodutibilidade. Os charts e imagens Bitnami existentes precisam ser revisados
-antes do primeiro deploy, devido às mudanças de catálogo desde 2025.
+`version` é obrigatória para serviços selecionados e deve ser uma versão exata
+no formato `X.Y.Z`. O Tilt passa esse valor ao Helm com `--version`; versões
+como `latest` ou intervalos não são aceitos. Esse campo é a versão do **chart**,
+não a tag da imagem nem o `appVersion` (que é um metadado do chart). Overrides de
+imagem continuam nos values do serviço.
+
+As versões de Prometheus e dos charts Bitnami foram fixadas com base no índice
+Helm local; Datadog usa a release publicada `3.215.1`. Isso não certifica
+compatibilidade dos values nem disponibilidade atual das imagens. Os charts e
+imagens Bitnami existentes precisam ser revisados antes do primeiro deploy,
+devido às mudanças de catálogo desde 2025.
 
 Se o app declara `depends_on: [minio]`, o Tilt inclui o MinIO mesmo com
 `active: false`. Serviços também podem declarar dependências. Nomes desconhecidos

@@ -45,7 +45,7 @@ users:
 
     def service(self, name, depends_on=None):
         return {'name': 'example', 'alias': name, 'url': 'https://example.com/charts',
-                'helm_repo': 'example/' + name, 'namespace': 'deps',
+                'helm_repo': 'example/' + name, 'namespace': 'deps', 'version': '1.2.3',
                 'values': './service.yaml', 'depends_on': depends_on or []}
 
     def evaluate(self, error=None, resources=None):
@@ -84,11 +84,27 @@ users:
         self.assertEqual(set(manifests['demo-pg']['ResourceDependencies']), {'storage', 'queue'})
         self.assertEqual(set(manifests['storage']['ResourceDependencies']), {'repo-example', 'queue'})
         self.assertIn('deleteCmd', manifests['storage']['DeployTarget'])
+        args = manifests['storage']['DeployTarget']['applyCmd']['args']
+        self.assertEqual(args[args.index('--version') + 1], '1.2.3')
 
     def test_explicit_selection_replaces_service_defaults(self):
         self.services = [self.service('unused')]
         self.services[0]['active'] = True
         self.assertEqual(set(self.evaluate(resources=['demo'])), {'demo-pg'})
+
+    def test_service_requires_chart_version(self):
+        self.options('  depends_on: [storage]\n')
+        service = self.service('storage')
+        del service['version']
+        self.services = [service]
+        self.evaluate('Defina version com a versão exata do chart')
+
+    def test_service_rejects_floating_chart_version(self):
+        self.options('  depends_on: [storage]\n')
+        service = self.service('storage')
+        service['version'] = 'latest'
+        self.services = [service]
+        self.evaluate('Defina version com a versão exata do chart')
 
     def test_cycle_is_reported(self):
         self.options('  depends_on: [storage]\n')
